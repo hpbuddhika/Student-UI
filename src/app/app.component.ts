@@ -1,4 +1,5 @@
-import { Observable } from 'rxjs';
+import { WebSocketSubject } from 'rxjs/webSocket';
+import { Observable, BehaviorSubject, Subscription,Subject } from 'rxjs';
 import { Component, OnInit, Inject } from '@angular/core';
 import { FormGroup, FormControl, Validators } from '@angular/forms';
 
@@ -9,6 +10,9 @@ import { Product } from './model';
 import { EditService } from './edit.service';
 
 import { map } from 'rxjs/operators';
+import { Injectable } from '@angular/core';
+import { Socket } from 'ngx-socket-io';
+
 
 @Component({
   selector: 'app-root',
@@ -17,6 +21,7 @@ import { map } from 'rxjs/operators';
 })
 export class AppComponent implements OnInit {
   public view: Observable<GridDataResult>;
+
   public showLoader = false;
   public gridState: State = {
     sort: [],
@@ -30,16 +35,48 @@ export class AppComponent implements OnInit {
 
   private students:any[];
 
+  public subject;
+  showTitle:boolean = false;
+
+
   constructor(
-    @Inject(EditService) editServiceFactory: any) {
+    @Inject(EditService) editServiceFactory: any,private socket: Socket) {
     this.editService = editServiceFactory()
+    this.subject = new Subject<string>()
+
+    this.subject.subscribe(
+      {
+        next:function(value){
+          console.log("value------" + value)
+        },
+        error:function(err){
+          console.log("err___"+ err)
+        }
+      }
+    )
 
   }
 
   public ngOnInit(): void {
+
     this.showLoader = true;
     this.view = this.editService.pipe(map(data => process(data, this.gridState)));
     this.editService.read();
+
+    this.socket.on('connect', function() {
+      console.log('Connected');
+    });
+
+    this.socket.on('jobStatus',this.callback(this.subject))
+
+  }
+
+  callback(subject) {
+    return function() {
+      subject.next("found student")
+      console.log("call back")
+      this.showTitle = true;
+    }
   }
 
   public onStateChange(state: State) {

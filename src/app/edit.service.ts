@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Observable, BehaviorSubject } from 'rxjs';
+import { Observable, BehaviorSubject, Subject } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 
 import { tap, map } from 'rxjs/operators';
@@ -30,7 +30,7 @@ export class EditService extends BehaviorSubject<any[]> {
         })
       )
       .subscribe(data => {
-        console.log("eidted array____: "+ JSON.stringify(data))
+        //console.log("eidted array____: "+ JSON.stringify(data))
         let dataArray = data['data']['students']
         let clone = [...dataArray]
         let editedDateAray: any[] = [];

@@ -20,6 +20,7 @@
     "@angular/platform-browser": "~11.0.1",
     "@angular/platform-browser-dynamic": "~11.0.1",
     "@angular/router": "~11.0.1",
+    "@apollo/client": "^3.0.0",
     "@progress/kendo-angular-buttons": "^6.0.0",
     "@progress/kendo-angular-common": "^2.0.0",
     "@progress/kendo-angular-dateinputs": "^5.0.0",
@@ -39,11 +40,11 @@
     "@progress/kendo-theme-bootstrap": "^4.32.0",
     "@progress/kendo-theme-default": "latest",
     "apollo-angular": "^2.4.0",
+    "graphql": "^15.0.0",
+    "ngx-socket-io": "^3.2.0",
     "rxjs": "~6.6.0",
     "tslib": "^2.0.0",
-    "zone.js": "~0.10.2",
-    "@apollo/client": "^3.0.0",
-    "graphql": "^15.0.0"
+    "zone.js": "~0.10.2"
   },
   "devDependencies": {
     "@angular-devkit/build-angular": "~0.1100.2",

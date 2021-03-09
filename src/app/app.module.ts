@@ -11,6 +11,9 @@ import { AppComponent } from './app.component';
 import { EditService } from './edit.service';
 import { GraphQLModule } from './graphql.module';
 
+import { SocketIoModule, SocketIoConfig } from 'ngx-socket-io';
+const config: SocketIoConfig = { url: 'http://localhost:4000', options: {}};
+
 @NgModule({
     declarations: [
         AppComponent
@@ -22,14 +25,15 @@ import { GraphQLModule } from './graphql.module';
         BrowserAnimationsModule,
         ReactiveFormsModule,
         GridModule,
-        GraphQLModule
+        GraphQLModule,
+        SocketIoModule.forRoot(config)
     ],
     providers: [
         {
             deps: [HttpClient,Apollo],
             provide: EditService,
             useFactory: (jsonp: HttpClient,apollo:Apollo) => () => new EditService(jsonp,apollo)
-        } 
+        },
     ],
     bootstrap: [AppComponent]
 })
