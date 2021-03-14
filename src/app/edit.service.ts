@@ -23,15 +23,9 @@ export class EditService extends BehaviorSubject<any[]> {
       return super.next(this.data);
     }
 
-    this.fetch()
-      .pipe(
-        tap(data => {
-          this.data = data;
-        })
-      )
-      .subscribe(data => {
-        //console.log("eidted array____: "+ JSON.stringify(data))
-        let dataArray = data['data']['students']
+    this.getAllStudents().subscribe(
+      (res) => {
+        let dataArray = res['data']['students']
         let clone = [...dataArray]
         let editedDateAray: any[] = [];
 
@@ -41,140 +35,177 @@ export class EditService extends BehaviorSubject<any[]> {
           editedDateAray.push(obj)
         }
         super.next(editedDateAray);
-      });
+      }
+    )
+
+
   }
 
-  public save(data: any, isNew?: boolean) {
-    const action = isNew ? CREATE_ACTION : UPDATE_ACTION;
-
+  public save(data) {
     this.reset();
+    this.updateStudent(data).subscribe(
+      res => {
+        this.read();
+      },
+      err => {
+        this.read();
+      }
+    )
 
-    this.fetch(action, data)
-      .subscribe(() => this.read(), () => this.read());
+
   }
 
   public remove(data: any) {
 
     this.reset();
+    this.deleteStudent(data).subscribe(
 
-    this.fetch(REMOVE_ACTION, data)
-      .subscribe(() => this.read(), () => this.read());
+      res => {
+        this.read();
+      },
+      err => {
+        this.read();
+      }
+    )
+
+
   }
 
-  public resetItem(dataItem: any) {
-    if (!dataItem) { return; }
+  getAllStudents(): Observable<any[]> {
+    const result = this.apollo
+      .query<any>({
+        query: gql`
+        {
+          students{
+            id,
+             name
+              email,
+              dataofBirth,
+              age,
 
-    // find orignal data item
-    const originalDataItem = this.data.find(item => item.ProductID === dataItem.ProductID);
-
-    // revert changes
-    Object.assign(originalDataItem, dataItem);
-
-    super.next(this.data);
+            }
+        }
+      `
+      }).pipe(
+        map(res => <any[]><unknown>res)
+      )
+    return result;
   }
+
+
+  updateStudent(data): Observable<any> {
+    const { id, name, email, dataofBirth, age } = data
+    const UPDATE_STUDENT = gql`
+   mutation updateStudent (
+     $id : Float!,
+     $name:String,
+     $dataofBirth:DateTime,
+     $age:Float!,
+    ) {
+
+    updateStudent(updateStudentData:{id:$id,name:$name,dataofBirth:$dataofBirth,age:$age}) {
+      id,
+      name,
+      age,
+      dataofBirth
+    }
+
+  }
+    `;
+    const result = this.apollo
+      .mutate<any>({
+        mutation: UPDATE_STUDENT,
+        variables: {
+          id: id,
+          name: name,
+          email: email,
+          dataofBirth: dataofBirth,
+          age: age
+        }
+
+      }).pipe(
+        map(res => <any[]><unknown>res)
+      )
+    return result;
+  }
+
+
+  deleteStudent(data) {
+    const studentId = data.id;
+
+    const DELETE_STUDENT = gql`
+   mutation deleteStudent (
+     $id : Float!,
+    ) {
+
+      deleteStudent(deleteStudent:{id:$id}) {
+      id,
+      name,
+      email,
+      age,
+      dataofBirth
+    }
+
+  }
+    `;
+    const result = this.apollo
+      .mutate<any>({
+        mutation: DELETE_STUDENT,
+        variables: {
+          id: studentId,
+        },
+        update: (store, mutationResult) => {
+          let data = store.readQuery({
+            query: getStudentsQuery
+          });
+
+          const cloneData = [...data['students']] as Array<any>
+          let newData : any[] = cloneData.filter(student => {
+            return student.id != mutationResult.data.deleteStudent.id
+          })
+
+          const studentsObj = {
+            students:null
+          }
+          studentsObj.students = newData
+
+          data = studentsObj
+
+          store.writeQuery({
+            query: getStudentsQuery,
+            data
+          });
+
+          let data2 = store.readQuery({
+            query: getStudentsQuery
+          });
+        }
+
+      }).pipe(
+        map(res => <any[]><unknown>res)
+      )
+    return result;
+  }
+
 
   private reset() {
-    this.data = [];
-  }
-
-  private fetch(action: string = '', data?: any): Observable<any[]> {
-
-    if (action == '') {
-      console.log("querying student -------")
-      const result = this.apollo
-        .query<any>({
-          query: gql`
-            {
-              students{
-                id,
-                 name
-                  email,
-                  age,
-                  dataofBirth
-                }
-            }
-          `
-        }).pipe(
-          map(res => <any[]><unknown>res)
-        )
-      console.log("saving resutl___: "+ JSON.stringify(result));
-      return result;
-
-    } else if (action == 'update') {
-      console.log("updating userj------")
-      const { id, name, email, dataofBirth, age } = data
-      const UPDATE_STUDENT = gql`
-     mutation updateStudent (
-       $id : Float!,
-       $name:String,
-       $dataofBirth:DateTime,
-       $age:Float!,
-      ) {
-
-      updateStudent(updateStudentData:{id:$id,name:$name,dataofBirth:$dataofBirth,age:$age}) {
-        id,
-        name,
-        age,
-        dataofBirth
-      }
-
-    }
-      `;
-      console.log("doing update");
-      const result = this.apollo
-        .mutate<any>({
-          mutation: UPDATE_STUDENT,
-          variables: {
-            id: id,
-            name: name,
-            email: email,
-            dataofBirth: dataofBirth,
-            age: age
-          }
-
-        }).pipe(
-          map(res => <any[]><unknown>res)
-        )
-      return result;
-
-    } else if (action == 'destroy') {
-      console.log("destroying student---------")
-      const studentId = data.id;
-
-      const DELETE_STUDENT = gql`
-     mutation deleteStudent (
-       $id : Float!,
-      ) {
-
-        deleteStudent(deleteStudent:{id:$id}) {
-        id,
-        name,
-        age,
-        dataofBirth
-      }
-
-    }
-      `;
-      const result = this.apollo
-        .mutate<any>({
-          mutation: DELETE_STUDENT,
-          variables: {
-            id: studentId,
-          }
-
-        }).pipe(
-          map(res => <any[]><unknown>res)
-        )
-      return result;
-
-    }
-
-
-
-  }
-
-
-  private serializeModels(data?: any): string {
-    return data ? `&models=${JSON.stringify([data])}` : '';
-  }
+  this.data = [];
 }
+
+}
+
+
+const getStudentsQuery = gql`
+  {
+    students{
+      id,
+       name
+        email,
+        dataofBirth,
+        age,
+
+      }
+  }
+`
+
+

@@ -1,6 +1,6 @@
 import { WebSocketSubject } from 'rxjs/webSocket';
 import { Observable, BehaviorSubject, Subscription,Subject } from 'rxjs';
-import { Component, OnInit, Inject } from '@angular/core';
+import { Component, OnInit, Inject, ViewEncapsulation } from '@angular/core';
 import { FormGroup, FormControl, Validators } from '@angular/forms';
 
 import { GridDataResult } from '@progress/kendo-angular-grid';
@@ -12,12 +12,14 @@ import { EditService } from './edit.service';
 import { map } from 'rxjs/operators';
 import { Injectable } from '@angular/core';
 import { Socket } from 'ngx-socket-io';
+import { NotificationService } from '@progress/kendo-angular-notification';
 
 
 @Component({
   selector: 'app-root',
   templateUrl: "app.component.html",
-  styleUrls: ["app.component.scss"]
+  styleUrls: ["app.component.scss"],
+  encapsulation: ViewEncapsulation.None
 })
 export class AppComponent implements OnInit {
   public view: Observable<GridDataResult>;
@@ -30,17 +32,15 @@ export class AppComponent implements OnInit {
   };
   public formGroup: FormGroup;
 
-  private editService: EditService;
+  public editService: EditService;
   private editedRowIndex: number;
 
   private students:any[];
 
   public subject;
-  showTitle:boolean = false;
-
 
   constructor(
-    @Inject(EditService) editServiceFactory: any,private socket: Socket) {
+    @Inject(EditService) editServiceFactory: any,private socket: Socket,private notificationService: NotificationService) {
     this.editService = editServiceFactory()
     this.subject = new Subject<string>()
 
@@ -57,6 +57,17 @@ export class AppComponent implements OnInit {
 
   }
 
+  showNotification(){
+    console.log("show notification")
+    this.notificationService.show({
+      content:'Student Table Updated!',
+      hideAfter: 600,
+      position: { horizontal: 'right', vertical: 'top' },
+      animation: { type: 'fade', duration: 400 },
+      type: { style: 'none', icon: false }
+  });
+  }
+
   public ngOnInit(): void {
 
     this.showLoader = true;
@@ -67,15 +78,23 @@ export class AppComponent implements OnInit {
       console.log('Connected');
     });
 
-    this.socket.on('jobStatus',this.callback(this.subject))
+    this.socket.on('jobStatus',this.callback(this.subject,this.notificationService))
 
   }
 
-  callback(subject) {
+
+
+  callback(subject,showNotification) {
     return function() {
       subject.next("found student")
-      console.log("call back")
-      this.showTitle = true;
+      console.log("call back method")
+      showNotification.show({
+        content:'Student Table Updated!',
+        hideAfter: 1200,
+        position: { horizontal: 'right', vertical: 'top' },
+        animation: { type: 'slide', duration: 400 },
+        type: { style: 'success', icon: true }
+    });
     }
   }
 
@@ -109,7 +128,7 @@ export class AppComponent implements OnInit {
     const product: Product = formGroup.value;
   //  console.log("saving--------"+ JSON.stringify(product) + "is new value: "+ isNew)
 
-    this.editService.save(product, isNew);
+    this.editService.save(product);
 
     sender.closeRow(rowIndex);
   }

@@ -21,3 +21,14 @@ export function createApollo(httpLink: HttpLink): ApolloClientOptions<any> {
   ],
 })
 export class GraphQLModule {}
+
+const defaultOptions = {
+  watchQuery: {
+    fetchPolicy: 'network-only',
+    errorPolicy: 'ignore',
+  },
+  query: {
+    fetchPolicy: 'network-only',
+    errorPolicy: 'all',
+  },
+}
